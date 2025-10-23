@@ -891,7 +891,7 @@ def main():
     # セッション状態の初期化
     initialize_session_state()
     
-    st.markdown('<h1 class="main-header">📞 AIテレアポ管理システム</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">📞 AIテレアポ管理システムセールス</h1>', unsafe_allow_html=True)
     
     manager = AITeleapoManager()
     history_manager = st.session_state.history_manager
