@@ -12,7 +12,7 @@ import pickle
 
 # ページ設定
 st.set_page_config(
-    page_title="AIテレアポ管理　セールス",
+    page_title="AIテレアポ管理セールス",
     page_icon="📞",
     layout="wide",
     initial_sidebar_state="expanded"
