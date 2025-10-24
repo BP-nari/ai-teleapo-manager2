@@ -12,7 +12,7 @@ import pickle
 
 # ページ設定
 st.set_page_config(
-    page_title="AIテレアポセールス",
+    page_title="AIテレアポセールス管理システム",
     page_icon="📞",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -470,6 +470,9 @@ class TeleapoDataManager:
         # 電話番号を文字列に変換（科学的記数法対策）
         if '電話番号' in df.columns:
             df['電話番号'] = df['電話番号'].apply(lambda x: str(int(float(x))) if pd.notna(x) and x != '' else '')
+            # 電話番号が空の行を削除
+            df = df[df['電話番号'].str.strip() != '']
+            df = df.reset_index(drop=True)
         
         # 元データを保存
         original_path = job_dir / "fm_export.xlsx"
@@ -852,8 +855,16 @@ def main():
                     # 電話番号が科学的記数法になっている場合の対策
                     if '電話番号' in df.columns:
                         df['電話番号'] = df['電話番号'].apply(lambda x: str(int(float(x))) if pd.notna(x) and str(x) not in ['', 'nan'] else '')
+                        # 電話番号が空の行を削除
+                        original_count = len(df)
+                        df = df[df['電話番号'].str.strip() != '']
+                        df = df.reset_index(drop=True)
+                        removed_count = original_count - len(df)
                     
-                    st.success(f"✅ ファイル読み込み完了: {uploaded_file.name} ({len(df):,} 件)")
+                    if removed_count > 0:
+                        st.success(f"✅ ファイル読み込み完了: {uploaded_file.name} ({len(df):,} 件) - 電話番号なし {removed_count} 件を除外")
+                    else:
+                        st.success(f"✅ ファイル読み込み完了: {uploaded_file.name} ({len(df):,} 件)")
                     
                     # データプレビュー
                     with st.expander("📋 データプレビュー"):
