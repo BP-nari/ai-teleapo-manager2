@@ -12,7 +12,7 @@ import pickle
 
 # ページ設定
 st.set_page_config(
-    page_title="AIテレアポセールス管理システム",
+    page_title="セールス用",
     page_icon="📞",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -811,7 +811,7 @@ def main():
         st.session_state.jobs = history_manager.load_jobs()
     
     # ヘッダー
-    st.markdown('<h1 class="main-header">📞 AIテレアポセールス管理システム</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">📞 AIテレアポセールス用</h1>', unsafe_allow_html=True)
     
     # サイドバーメニュー
     with st.sidebar:
