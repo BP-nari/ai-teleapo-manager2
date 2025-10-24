@@ -12,7 +12,7 @@ import pickle
 
 # ページ設定
 st.set_page_config(
-    page_title="AIテレアポセールス管理システム",
+    page_title="AIテレアポセールス",
     page_icon="📞",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -467,6 +467,10 @@ class TeleapoDataManager:
         job_dir = self.base_dir / job_id
         job_dir.mkdir(exist_ok=True)
         
+        # 電話番号を文字列に変換（科学的記数法対策）
+        if '電話番号' in df.columns:
+            df['電話番号'] = df['電話番号'].apply(lambda x: str(int(float(x))) if pd.notna(x) and x != '' else '')
+        
         # 元データを保存
         original_path = job_dir / "fm_export.xlsx"
         df.to_excel(original_path, index=False)
@@ -842,8 +846,12 @@ def main():
             
             if uploaded_file:
                 try:
-                    # ファイルを読み込み
-                    df = pd.read_excel(uploaded_file)
+                    # ファイルを読み込み（電話番号を文字列として読み込む）
+                    df = pd.read_excel(uploaded_file, dtype={'電話番号': str})
+                    
+                    # 電話番号が科学的記数法になっている場合の対策
+                    if '電話番号' in df.columns:
+                        df['電話番号'] = df['電話番号'].apply(lambda x: str(int(float(x))) if pd.notna(x) and str(x) not in ['', 'nan'] else '')
                     
                     st.success(f"✅ ファイル読み込み完了: {uploaded_file.name} ({len(df):,} 件)")
                     
