@@ -679,6 +679,15 @@ class TeleapoDataManager:
             how='left'
         )
         
+        # 重複を除去(同じ社名で複数のIDがマッチした場合、最初の1件のみを採用)
+        # 通話結果の元の順序を保持するため、社名と電話番号の組み合わせで重複を判定
+        if '電話番号' in merged_df.columns:
+            # 電話番号がある場合は、社名と電話番号の組み合わせで重複除去
+            merged_df = merged_df.drop_duplicates(subset=['社名', '電話番号'], keep='first')
+        else:
+            # 電話番号がない場合は、社名のみで重複除去
+            merged_df = merged_df.drop_duplicates(subset=['社名'], keep='first')
+        
         # 不要な列を削除
         if '社名_正規化' in merged_df.columns:
             merged_df = merged_df.drop('社名_正規化', axis=1)
