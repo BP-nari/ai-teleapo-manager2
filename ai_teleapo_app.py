@@ -643,6 +643,9 @@ class TeleapoDataManager:
         # 通話結果の社名を正規化
         call_results_df['社名_正規化'] = call_results_df['社名'].apply(self.normalize_text)
         
+        # 元データの社名を正規化
+        original_df['顧客名_正規化'] = original_df['顧客名【コピー用】'].apply(self.normalize_text)
+        
         # 架電時刻列を保持（存在する場合）
         has_call_time = '架電時刻' in call_results_df.columns
         
@@ -661,30 +664,26 @@ class TeleapoDataManager:
                 # エラーが発生した場合は元の架電時刻をそのまま使用
                 pass
         
-        # 社名ベースでマージ（rowmapを使用してindex_in_fmとcompanyを取得）
+        # 元データから必要な列を選択
+        columns_to_merge = ['顧客名【コピー用】', '顧客名_正規化', 'IDの頭にID', '住所統合', '最終結果', '最終前回結果【改訂】', 
+                           '社員名', '次回コール日', '最終履歴メモ【改訂】']
+        available_merge_columns = [col for col in columns_to_merge if col in original_df.columns]
+        original_subset = original_df[available_merge_columns].copy()
+        
+        # 社名ベースで直接マージ
         merged_df = pd.merge(
             call_results_df, 
-            rowmap_df[['company_normalized', 'company', 'index_in_fm']], 
+            original_subset, 
             left_on='社名_正規化', 
-            right_on='company_normalized', 
+            right_on='顧客名_正規化', 
             how='left'
         )
         
-        # 元データの他の列も結合（社名をキーに）
-        if '顧客名【コピー用】' in original_df.columns:
-            # Sales用の列を選択（IDの頭にID列を追加）
-            columns_to_merge = ['顧客名【コピー用】', 'IDの頭にID', '住所統合', '最終結果', '最終前回結果【改訂】', 
-                               '社員名', '次回コール日', '最終履歴メモ【改訂】']
-            
-            # 存在する列のみを選択
-            available_merge_columns = [col for col in columns_to_merge if col in original_df.columns]
-            original_subset = original_df[available_merge_columns].copy()
-            original_subset = original_subset.rename(columns={'顧客名【コピー用】': 'company'})
-            merged_df = pd.merge(merged_df, original_subset, on='company', how='left')
-        
-        # 社名列を「顧客名【コピー用】」に変更
-        if 'company' in merged_df.columns:
-            merged_df = merged_df.rename(columns={'company': '顧客名【コピー用】'})
+        # 不要な列を削除
+        if '社名_正規化' in merged_df.columns:
+            merged_df = merged_df.drop('社名_正規化', axis=1)
+        if '顧客名_正規化' in merged_df.columns:
+            merged_df = merged_df.drop('顧客名_正規化', axis=1)
         
         # 通話結果に行指紋を追加
         merged_df['row_key'] = merged_df.apply(
