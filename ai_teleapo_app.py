@@ -672,9 +672,13 @@ class TeleapoDataManager:
         
         # 元データの他の列も結合（社名をキーに）
         if '顧客名【コピー用】' in original_df.columns:
-            # Sales用の列を選択
-            original_subset = original_df[['顧客名【コピー用】', '住所統合', '最終結果', '最終前回結果【改訂】', 
-                                          '社員名', '次回コール日', '最終履歴メモ【改訂】']].copy()
+            # Sales用の列を選択（IDの頭にID列を追加）
+            columns_to_merge = ['顧客名【コピー用】', 'IDの頭にID', '住所統合', '最終結果', '最終前回結果【改訂】', 
+                               '社員名', '次回コール日', '最終履歴メモ【改訂】']
+            
+            # 存在する列のみを選択
+            available_columns = [col for col in columns_to_merge if col in original_df.columns]
+            original_subset = original_df[available_columns].copy()
             original_subset = original_subset.rename(columns={'顧客名【コピー用】': 'company'})
             merged_df = pd.merge(merged_df, original_subset, on='company', how='left')
         
@@ -684,16 +688,16 @@ class TeleapoDataManager:
             axis=1
         )
         
-        # 列の順序を整理（架電日・架電時間を含める）
+        # 列の順序を整理（IDの頭にIDを先頭に配置）
         if has_call_time and '架電日' in merged_df.columns and '架電時間' in merged_df.columns:
-            column_order = ['社名', '電話番号', '架電日', '架電時間', 'ステータス', '架電結果', '要約', '通話時間', 
+            column_order = ['IDの頭にID', '社名', '電話番号', '架電日', '架電時間', 'ステータス', '架電結果', '要約', '通話時間', 
                            '住所統合', '最終結果', '最終前回結果【改訂】', '社員名', '次回コール日', '最終履歴メモ【改訂】', 'row_key']
         elif has_call_time:
             # 分割できなかった場合は元の架電時刻を使用
-            column_order = ['社名', '電話番号', '架電時刻', 'ステータス', '架電結果', '要約', '通話時間', 
+            column_order = ['IDの頭にID', '社名', '電話番号', '架電時刻', 'ステータス', '架電結果', '要約', '通話時間', 
                            '住所統合', '最終結果', '最終前回結果【改訂】', '社員名', '次回コール日', '最終履歴メモ【改訂】', 'row_key']
         else:
-            column_order = ['社名', '電話番号', 'ステータス', '架電結果', '要約', '通話時間', 
+            column_order = ['IDの頭にID', '社名', '電話番号', 'ステータス', '架電結果', '要約', '通話時間', 
                            '住所統合', '最終結果', '最終前回結果【改訂】', '社員名', '次回コール日', '最終履歴メモ【改訂】', 'row_key']
         
         # 存在する列のみ選択
@@ -701,6 +705,7 @@ class TeleapoDataManager:
         merged_df = merged_df[available_columns]
         
         return merged_df
+
     
     def calculate_statistics(self, df):
         """統計を計算"""
