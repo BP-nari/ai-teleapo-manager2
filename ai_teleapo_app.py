@@ -661,46 +661,47 @@ class TeleapoDataManager:
                 # エラーが発生した場合は元の架電時刻をそのまま使用
                 pass
         
-        # 社名ベースでマージ（rowmapを使用してindex_in_fmを取得）
+        # 社名ベースでマージ（rowmapを使用してindex_in_fmとcompanyを取得）
         merged_df = pd.merge(
             call_results_df, 
-            rowmap_df[['company_normalized', 'index_in_fm']], 
+            rowmap_df[['company_normalized', 'company', 'index_in_fm']], 
             left_on='社名_正規化', 
             right_on='company_normalized', 
             how='left'
         )
         
-        # index_in_fmを使って元データから必要な列を取得
-        if 'index_in_fm' in merged_df.columns:
-            # 元データから必要な列を選択（IDの頭にID列を含む）
-            columns_to_merge = ['IDの頭にID', '住所統合', '最終結果', '最終前回結果【改訂】', 
+        # 元データの他の列も結合（社名をキーに）
+        if '顧客名【コピー用】' in original_df.columns:
+            # Sales用の列を選択（IDの頭にID列を追加）
+            columns_to_merge = ['顧客名【コピー用】', 'IDの頭にID', '住所統合', '最終結果', '最終前回結果【改訂】', 
                                '社員名', '次回コール日', '最終履歴メモ【改訂】']
             
             # 存在する列のみを選択
             available_merge_columns = [col for col in columns_to_merge if col in original_df.columns]
-            
-            # index_in_fmを使って元データから情報を取得
-            for col in available_merge_columns:
-                merged_df[col] = merged_df['index_in_fm'].apply(
-                    lambda idx: original_df.loc[int(idx), col] if pd.notna(idx) and int(idx) < len(original_df) else None
-                )
+            original_subset = original_df[available_merge_columns].copy()
+            original_subset = original_subset.rename(columns={'顧客名【コピー用】': 'company'})
+            merged_df = pd.merge(merged_df, original_subset, on='company', how='left')
+        
+        # 社名列を「顧客名【コピー用】」に変更
+        if 'company' in merged_df.columns:
+            merged_df = merged_df.rename(columns={'company': '顧客名【コピー用】'})
         
         # 通話結果に行指紋を追加
         merged_df['row_key'] = merged_df.apply(
-            lambda row: self.create_row_key(row.get('社名', ''), row.get('電話番号', '')), 
+            lambda row: self.create_row_key(row.get('顧客名【コピー用】', ''), row.get('電話番号', '')), 
             axis=1
         )
         
         # 列の順序を整理（架電日・架電時間を含める）
         if has_call_time and '架電日' in merged_df.columns and '架電時間' in merged_df.columns:
-            column_order = ['IDの頭にID', '社名', '電話番号', '架電日', '架電時間', 'ステータス', '架電結果', '要約', '通話時間', 
+            column_order = ['IDの頭にID', '顧客名【コピー用】', '電話番号', '架電日', '架電時間', 'ステータス', '架電結果', '要約', '通話時間', 
                            '住所統合', '最終結果', '最終前回結果【改訂】', '社員名', '次回コール日', '最終履歴メモ【改訂】', 'row_key']
         elif has_call_time:
             # 分割できなかった場合は元の架電時刻を使用
-            column_order = ['IDの頭にID', '社名', '電話番号', '架電時刻', 'ステータス', '架電結果', '要約', '通話時間', 
+            column_order = ['IDの頭にID', '顧客名【コピー用】', '電話番号', '架電時刻', 'ステータス', '架電結果', '要約', '通話時間', 
                            '住所統合', '最終結果', '最終前回結果【改訂】', '社員名', '次回コール日', '最終履歴メモ【改訂】', 'row_key']
         else:
-            column_order = ['IDの頭にID', '社名', '電話番号', 'ステータス', '架電結果', '要約', '通話時間', 
+            column_order = ['IDの頭にID', '顧客名【コピー用】', '電話番号', 'ステータス', '架電結果', '要約', '通話時間', 
                            '住所統合', '最終結果', '最終前回結果【改訂】', '社員名', '次回コール日', '最終履歴メモ【改訂】', 'row_key']
         
         # 存在する列のみ選択
