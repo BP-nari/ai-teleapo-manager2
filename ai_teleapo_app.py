@@ -664,7 +664,7 @@ class TeleapoDataManager:
         # 社名ベースでマージ（rowmapを使用してindex_in_fmを取得）
         merged_df = pd.merge(
             call_results_df, 
-            rowmap_df[['company_normalized', 'company', 'index_in_fm']], 
+            rowmap_df[['company_normalized', 'index_in_fm']], 
             left_on='社名_正規化', 
             right_on='company_normalized', 
             how='left'
@@ -682,7 +682,7 @@ class TeleapoDataManager:
             # index_in_fmを使って元データから情報を取得
             for col in available_merge_columns:
                 merged_df[col] = merged_df['index_in_fm'].apply(
-                    lambda idx: original_df.loc[idx, col] if pd.notna(idx) and idx < len(original_df) else None
+                    lambda idx: original_df.loc[int(idx), col] if pd.notna(idx) and int(idx) < len(original_df) else None
                 )
         
         # 通話結果に行指紋を追加
